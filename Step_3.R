@@ -13,7 +13,7 @@ require(stringi)
 
 dpath_ngrams  <- "data/ngrams.rds"  # Complete ngrams table
 dpath_base    <- "data/"            # sample ngrams folder
-dpath_pattern <- "*S.rds$"          # data/*S.rds
+dpath_pattern <- "*T.rds$"          # data/*S.rds
 
 ### Support - not used as is - save just in case
 
