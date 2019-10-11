@@ -3,34 +3,19 @@
 #
 # Step 2 : Load N1 Tokens - Subsample and build ngrams to 4th order
 # 
-require(tidyverse)
-require(readtext)
-require(quanteda)
-require(stringi)
 
-### Globals
+### Include common
 
-dpath_tn_train <- "data/tokens_n1_train.rds"
-dpath_ngram    <- "data/ngram_"
-
-### Support
-
-# Flat dfm - manageable (for our purpose)
-
-flatdfm <- function(tkn) {
-    tkn <- tibble(token = unlist(tkn)) %>%
-        count(token,sort=TRUE)
-}
-
+if (!exists("common")) source("./Common.R")
 
 # Subsample full corpus (by size) and build ngram look-up table
 
 subngrams <- function(size,ext = NA) {
     message(paste0(size," random sentences"))
     tokens_n1 <- tokens_sample(tokens_full,size)      # sample 
-    tokens_n2 <- tokens_ngrams(tokens_n1, n=2, concatenator = " ")
-    tokens_n3 <- tokens_ngrams(tokens_n1, n=3, concatenator = " ")
-    tokens_n4 <- tokens_ngrams(tokens_n1, n=4, concatenator = " ")
+    tokens_n2 <- tokens_ngrams(tokens_n1, n=2, concatenator = nsplit)
+    tokens_n3 <- tokens_ngrams(tokens_n1, n=3, concatenator = nsplit)
+    tokens_n4 <- tokens_ngrams(tokens_n1, n=4, concatenator = nsplit)
     message("n-grams")
     tokens_n1 <- flatdfm(tokens_n1)
     pad       <- which(tokens_n1$token=="")
@@ -44,16 +29,16 @@ subngrams <- function(size,ext = NA) {
     return(ngramtbl)
 }
 
-# Subsample full corpus (by chunks) and build ngram look-up table
+# Subsample full corpus (by sequential chunks) and build ngram look-up table
 
 subnchunk <- function(chunk,size,ext = NA) {
     a         <- 1+(chunk-1)*size
     b         <- chunk*size
     message(paste0("From ",a," to ",b))
     tokens_n1 <- tokens_full[a:b]
-    tokens_n2 <- tokens_ngrams(tokens_n1, n=2, concatenator = " ")
-    tokens_n3 <- tokens_ngrams(tokens_n1, n=3, concatenator = " ")
-    tokens_n4 <- tokens_ngrams(tokens_n1, n=4, concatenator = " ")
+    tokens_n2 <- tokens_ngrams(tokens_n1, n=2, concatenator = nsplit)
+    tokens_n3 <- tokens_ngrams(tokens_n1, n=3, concatenator = nsplit)
+    tokens_n4 <- tokens_ngrams(tokens_n1, n=4, concatenator = nsplit)
     message("n-grams")
     tokens_n1 <- flatdfm(tokens_n1) # flat DFM
     pad       <- which(tokens_n1$token=="")
@@ -71,9 +56,9 @@ subnchunk <- function(chunk,size,ext = NA) {
 
 tokens_full <- read_rds(dpath_tn_train)
 
-for(i in 1:10) {
+for(i in 1:chnknum) {
     message("Loop ",i)
-    subngrams(100000,paste0(i,"S"))
+    subngrams(chnksize,paste0(i,ngext))
 }
 
 ### Saved - Ctrl point 2

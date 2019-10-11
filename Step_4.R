@@ -4,16 +4,9 @@
 # Step 4 : Build probablities for ngrams
 #
 
-require(tidyverse)
-require(readtext)
-require(quanteda)
-require(stringi)
-require(data.table)
+### Include common
 
-# Globals
-
-dpath_ngrams    <- "data/ngrams.rds"     # Complete ngrams table
-dpath_lookahead <- "data/lookahead.rds"  # Look ahead table
+if (!exists("common")) source("./Common.R")
 
 ## Support
 
@@ -38,7 +31,7 @@ gtcount <- function(x, thr=5) {
 # lookahead table: Split Wn from Wn-1...W1, convert to data table, and set key
 
 lookahead <- function(x) {
-    x$s <- sapply(x$token, function(t) tail(gregexpr(" ",t)[[1]],1))
+    x$s <- sapply(x$token, function(t) tail(gregexpr(nsplit,t)[[1]],1))
     x   <- mutate(x,l=nchar(token),ahead=stri_sub(token,s+1,l),token=stri_sub(token,1,s-1))
     x   <- data.table(x[,c(1,2,3,4,5,8)])
     setkey(x,token,ahead)

@@ -4,35 +4,13 @@
 # Step 1 : Tokenize, drop sentences with profanity, remove low frequency tokens
 #
 
-require(tidyverse)
-require(readtext)
-require(quanteda)
-require(stringi)
-require(lexicon)
+### Include common
 
-### Globals
-
-dpath_in       <- "data/en_US.full.txt"       # reshuffled corpus
-dpath_tfull    <- "data/tokens_full.rds"      # full corpus tokenized
-dpath_tn0      <- "data/tokens_n0.rds"        # profanity filtered (was also stopwords, stems...)
-dpath_dfmn0    <- "data/dfm_n0.rds"           # doc feat matrix for tokens n0 - my simple style
-dpath_tn1      <- "data/tokens_n1.rds"        # 90% coverage tokens, padded
-dpath_dfmn1    <- "data/dfm_n1.rds"           # doc feat matrix for tokens n1 - my simple style
-dpath_tn_train <- "data/tokens_n1_train.rds"  # 90% coverage tokens, padded
-dpath_tn_test  <- "data/tokens_n1_test.rds"   # 90% coverage tokens, padded
-
-### Support
-
-# Flat dfm - manageable (for our purpose)
-
-flatdfm <- function(tkn) {
-    tkn <- tibble(token = unlist(tkn)) %>%
-           count(token,sort=TRUE)
-}
+if (!exists("common")) source("./Common.R")
 
 ### Do it
 
-srcbody <- read_lines(dpath_in)
+srcbody <- read_lines(dpath_textf)
 message("Corpus loaded")
 
 tokens_n1 <- tokens(srcbody, remove_punct   = TRUE,     # Single tokens, removing ...
@@ -58,7 +36,7 @@ message("DFM N0")
 
 tkcount   <- sum(dfm_n1$n)
 dfm_n1$q  <- cumsum(dfm_n1$n)/tkcount                   # Cumul. coverage
-thrshld   <- first(which(dfm_n1$q>0.90))                # cut at 90% coverage
+thrshld   <- first(which(dfm_n1$q>coverage))            # cut at XX% coverage
 tk2drop   <- dfm_n1$token[thrshld:length(dfm_n1$token)] # Tokens to drop
 dfm_n1    <- dfm_n1[1:(thrshld-1),c(1,2)]               # Tokens left
 write_rds(dfm_n1,dpath_dfmn1)                           # Save for later use
@@ -69,7 +47,7 @@ write_rds(tokens_n1,dpath_tn1)                                # and save for lat
 message("Tokens N1 (trimmed)")
 
 insample <- length(tokens_n1)
-insample <- sample(insample,0.8*insample)
+insample <- sample(insample,trsmpl*insample)    # train sample (smpl% of total size)
 write_rds(tokens_n1[ insample],dpath_tn_train)  # trainind set
 write_rds(tokens_n1[-insample],dpath_tn_test)   # testing set
 

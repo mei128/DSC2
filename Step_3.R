@@ -4,42 +4,13 @@
 # Step 3 : Merge all ngram tables created
 #
 
-require(tidyverse)
-require(readtext)
-require(quanteda)
-require(stringi)
+### Include common
 
-# Globals
-
-dpath_ngrams  <- "data/ngrams.rds"  # Complete ngrams table
-dpath_base    <- "data/"            # sample ngrams folder
-dpath_pattern <- "*T.rds$"          # data/*S.rds
-
-### Support - not used as is - save just in case
-
-# Combine two flat dfms
-
-merge_dfm <- function(uno,dos){
-    uno <- rbind.data.frame(uno,dos)
-    dos <- uno %>% group_by(token) %>%
-           summarise(n=sum(n)) %>%
-           arrange(desc(n))
-    return(dos)
-}
-
-# Combine to ngram look-up tables (to merge data from two samples)
-
-merge_ngrams <- function(uno,dos) {
-    for (i in 1:length(uno)) {
-        dos[[i]] <-merge_dfm(uno[[i]],dos[[i]])
-    }
-    return(dos)
-}
-
+if (!exists("common")) source("./Common.R")
 
 ## Do it #
 
-nfiles <- list.files(dpath_base, pattern = dpath_pattern, full.names = TRUE)  # Files ready to merge
+nfiles <- list.files(dpath_nbase, pattern = dpath_pattern, full.names = TRUE) # Files ready to merge
 nlist  <- list()                                                              # Empty container
 ngrams <- list()
 
