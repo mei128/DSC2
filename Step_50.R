@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 4 : Build probablities for ngrams
+# Step 60 : Build probablities for ngrams, GT discounted count, and look ahead table
 #
 
 ### Include common
@@ -41,7 +41,11 @@ lookahead <- function(x) {
 ## Do it
 
 
-ngrams <- read_rds(dpath_ngrams)        # Start where we left
+if (!exists("ngrams")) {                # load where we left if unchained execution
+    ngrams <- read_rds(dpath_ngrams)        # Start where we left
+    message("n-grams loaded")
+}
+
 message("Level 1")
 tokens_v <- length(ngrams[[1]]$n)       # Unique token count: vocabulary size
 tokens_n <- sum(ngrams[[1]]$n)          # Total  token count: corpus length (trimmed)

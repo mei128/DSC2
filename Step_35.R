@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 2B : Create co-occurrence table for a large enough sample.
+# Step 40 : Create co-occurrence table for similar total size sample.
 # 
 
 ### Include common
@@ -10,8 +10,11 @@ if (!exists("common")) source("./Common.R")
 
 ### Do it
 
-tokens_full <- read_rds(dpath_tn_train)
-message("Read tokens")
+if (!exists("tokens_full")) {                 # Load where we left if unchained execution
+    tokens_full <- read_rds(dpath_tn_train)
+    message("Read tokens")
+}
+
 tokens_full <- tokens_sample(tokens_full,chnknum*chnksize) # subsample of similar total size
 
 fcmc <- fcm(tokens_full,tri = FALSE)          # Symmetric co-ocurrence matrix
@@ -29,5 +32,6 @@ for (i in 1:d)
 
 write_rds(fcmc,dpath_fcm_p)
 message("Saved matrix (probability)")
+rm(tokens_full, fcmc)
 
 ### Saved - Ctrl point 2B

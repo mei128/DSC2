@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 3 : Merge all ngram tables created
+# Step 50 : Merge all ngram tables created
 #
 
 ### Include common
@@ -32,5 +32,6 @@ for (i in 1:length(nlist[[1]])) {                         # For each n-gram leve
 }
 
 write_rds(ngrams,dpath_ngrams)                            # Save for next step
+rm(nlist)
 
 ### Saved - Ctrl point 3

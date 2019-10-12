@@ -38,8 +38,8 @@ dpath_nbase     <- "data/"                     # sample ngrams folder
 ngext           <- "S"                         # ngram subsample signature
 dpath_pattern   <- paste0("*",ngext,".rds$")   # trail pattern of ngrams of subsamples
 
-chnknum         <- 5                           # number of subsamples
-chnksize        <- 50                          # size of each sample
+chnknum         <- 50                          # number of subsamples
+chnksize        <- 20000                       # size of each sample
 
 coverage        <- 0.9                         # corpus coverage threshold for vocabulary trimming
 trsmpl          <- 0.8                         # percentage to total sample included in training set

@@ -1,8 +1,10 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 2 : Load N1 Tokens - Subsample and build ngrams to 4th order
-# 
+# Step 30 : Load N1 Tokens - Subsample and build ngrams to 4th order
+#           Choose sequential samples of given size (pre-randomized set) or
+#           Random subsample the full token list
+#           Unit is sentence.
 
 ### Include common
 
@@ -54,7 +56,10 @@ subnchunk <- function(chunk,size,ext = NA) {
 
 ### Do it - choose to build samples sequentially (src is already random) or subsample
 
-tokens_full <- read_rds(dpath_tn_train)
+if (!exists("tokens_full")) {                # Load where we left if unchained execution
+    tokens_full <- read_rds(dpath_tn_train)
+    message("Tokens loaded")
+}
 
 for(i in 1:chnknum) {
     message("Loop ",i)
