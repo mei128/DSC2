@@ -45,6 +45,9 @@ coverage        <- 0.9                         # corpus coverage threshold for v
 trsmpl          <- 0.8                         # percentage to total sample included in training set
 nsplit          <- "_"                         # ngram separator symbol
 
+predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
+predsetshow     <- 5                           # number of terms to show from prediction set
+
 ### Support
 
 # Flat dfm - manageable (for our purpose)

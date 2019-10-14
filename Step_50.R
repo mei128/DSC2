@@ -51,10 +51,10 @@ tokens_v <- length(ngrams[[1]]$n)       # Unique token count: vocabulary size
 tokens_n <- sum(ngrams[[1]]$n)          # Total  token count: corpus length (trimmed)
 ngrams[[1]]$pml <- ngrams[[1]]$n/tokens_n               # ML probability
 ngrams[[1]]$psm <-(ngrams[[1]]$n+1)/(tokens_v+tokens_n) # Smoothed unigram probability
-ngrams[[1]]$gt  <- ngrams[[1]]$n                        # Good-Turing
+ngrams[[1]]$gt  <- ngrams[[1]]$n                        # Good-Turing: no discount
 ngrams[[1]]     <- mutate(ngrams[[1]],ahead = token)    # N1 -> predict token
 ngrams[[1]]     <- data.table(ngrams[[1]])              # Indexed data table
-setkey(ngrams[[1]],token)
+setkey(ngrams[[1]],token,ahead)
 
 for(n in 2:length(ngrams)) {
     message(paste0("Level ",n))
