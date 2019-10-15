@@ -42,19 +42,18 @@ ahead <- function(t,l) {
                                                                        # else 
     t <- as.tbl(lookahead[[l]][lakey])                                 #    look ahead tibble
     t <- arrange(t,desc(psm))                                          #    sort by prob
-    s<-length(t$ahead)
-    t[1:ifelse(s<predsetsize,s,predsetsize),]                          #    truncate to predsize
+    t[1:min(length(t$ahead),predsetsize),]                              #    truncate to predsize
 }
 
 # guesswork - guess next word when no n-gram matches: max cooccurrence with input tokens
 
 guesswork <- function(t) {
-    t<-t[t %in% lookahead[[1]]$ahead]
+    t<-t[t %in% cntxguess]
     if (length(t)==0) return(bestguess)
     inin <- fcmp[t,]
     if (length(t)>1) inin <- sort(apply(inin, 2, sum),decreasing = TRUE)[1:predsetsize]
     else             inin <- sort(inin,decreasing = TRUE)[1:predsetsize]
-    return(lookahead[[1]][names(inin)])
+    return(tibble(ahead=names(inin),psm=inin))
 }
 
 
@@ -82,18 +81,18 @@ whatnext <- function(input) {
         la2 <- lt2/length(ng2$ahead)  # discriminant value of N2 prediction
     
     if (la2 == 0) {                           # if not even 2 grams...
-        return(guesswork(t)[,c("ahead","psm")])
+        return(guesswork(tkns))
     }
 
     lall    <- la2+la3+la4            # total discriminant weight
     ng4$psm <- ng4$psm*la4/lall       # "load" each level...
     ng3$psm <- ng3$psm*la3/lall
     ng2$psm <- ng2$psm*la2/lall
-    ng4     <- rbind(ng4,ng3,ng2)     # and merge all 
-    ng4 %>%
-        group_by(ahead) %>%
-        summarise(psm = sum(psm)) %>%
-        arrange(desc(psm))
+    ng4     <- rbind(ng4,ng3,ng2) %>%   # and merge all 
+                group_by(ahead) %>%
+                summarise(psm = sum(psm)) %>%
+                arrange(desc(psm))
+    ng4[1:min(length(ng4$ahead),predsetshow),]
 }
 
 ### Do it
@@ -104,6 +103,7 @@ lt4       <- length(lookahead[[4]]$ahead)                       # N-gram table s
 lt3       <- length(lookahead[[3]]$ahead)                       #
 lt2       <- length(lookahead[[2]]$ahead)                       #
 lt1       <- length(lookahead[[1]]$ahead)                       #
-bestguess <- arrange(lookahead[[1]],desc(psm))[1:predsetsize,]  # Best single token guess, for speed
+bestguess <- arrange(lookahead[[1]],desc(psm))[1:predsetshow,]  # Best single token guess, for speed
+cntxguess <- colnames(fcmp)                                     # Tokens in cooccurrence matrix, for speed
 
 
