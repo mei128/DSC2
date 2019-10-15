@@ -51,8 +51,8 @@ guesswork <- function(t) {
     t<-t[t %in% cntxguess]
     if (length(t)==0) return(bestguess)
     inin <- fcmp[t,]
-    if (length(t)>1) inin <- sort(apply(inin, 2, sum),decreasing = TRUE)[1:predsetsize]
-    else             inin <- sort(inin,decreasing = TRUE)[1:predsetsize]
+    if (length(t)>1) inin <- sort(apply(inin, 2, sum),decreasing = TRUE)[1:predsetshow]
+    else             inin <- sort(inin,decreasing = TRUE)[1:predsetshow]
     return(tibble(ahead=names(inin),psm=inin))
 }
 
