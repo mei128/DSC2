@@ -8,7 +8,7 @@
 
 ### Include common
 
-if (!exists("common")) source("./Common.R")
+if (!exists("bldinclude")) source("./BLDInc.R")
 
 # Subsample full corpus (by size) and build ngram look-up table
 

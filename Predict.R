@@ -15,7 +15,7 @@
 
 ### Include common
 
-if (!exists("common")) source("./Common.R")
+if (!exists("prdinclude")) source("./PRDInc.R")
 
 ## Support
 

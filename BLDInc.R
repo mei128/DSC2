@@ -10,7 +10,7 @@ require(data.table)
 
 ### Globals
 
-common          <- TRUE                        # common loaded flag
+bldinclude      <- TRUE                        # common loaded flag
 
 dpath_base      <- "data/en_US/*.txt"          # provided corpus path
 dpath_textf     <- "data/en_US.full.txt"       # combined, clean, text
@@ -43,10 +43,9 @@ chnksize        <- 20000                       # size of each sample
 
 coverage        <- 0.9                         # corpus coverage threshold for vocabulary trimming
 trsmpl          <- 0.8                         # percentage to total sample included in training set
-nsplit          <- "_"                         # ngram separator symbol
 
-predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
-predsetshow     <- 5                           # number of terms to show from prediction set
+nsplit          <- "_"                         # ngram separator symbol (sync prdinclude)
+
 
 ### Support
 

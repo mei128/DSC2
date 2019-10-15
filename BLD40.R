@@ -6,7 +6,7 @@
 
 ### Include common
 
-if (!exists("common")) source("./Common.R")
+if (!exists("bldinclude")) source("./BLDInc.R")
 
 ## Do it #
 

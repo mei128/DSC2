@@ -6,7 +6,7 @@
 
 ### Include common
 
-if (!exists("common")) source("./Common.R")
+if (!exists("bldinclude")) source("./BLDInc.R")
 
 ### Do it
 
@@ -17,11 +17,11 @@ if (!exists("tokens_full")) {                 # Load where we left if unchained 
 
 tokens_full <- tokens_sample(tokens_full,chnknum*chnksize) # subsample of similar total size
 
+tokens_full <- tokens_remove(tokens_full, c(stopwords(),"")) # remove stopwords and padding
+
 fcmc <- fcm(tokens_full,tri = FALSE)          # Symmetric co-ocurrence matrix
 fcmc <- as.matrix(fcmc)
 message("Co-occurence matrix done.")
-pad  <- which(colnames(fcmc)=="")             # Find padding (from dropped low freq tokens)
-fcmc <- fcmc[-pad,-pad]                       # drop it
 write_rds(fcmc,dpath_fcm)                     # Save fcm
 message("Saved matrix (count)")
 
