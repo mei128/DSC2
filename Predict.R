@@ -31,21 +31,34 @@ intoken <- function(input) {
     return(t)
 }
 
+# context - filter and reassign probabiliy by context
 
-
-# ahead - look ahead tokens t for level n (>=2)
-
-ahead <- function(t,l) {
-    lakey <- paste(tail(t,l-1), collapse = nsplit)                     # Look-ahead key
-    if (length(t) < (l-1))                                             # If not enough input
-        return(tibble(token=lakey,n=NA,gt=NA,pml=NA,psm=NA,ahead=NA))  #    return NA output
-                                                                       # else 
-    t <- as.tbl(lookahead[[l]][lakey])                                 #    look ahead tibble
-    t <- arrange(t,desc(psm))                                          #    sort by prob
-    t[1:min(length(t$ahead),predsetsize),]                              #    truncate to predsize
+bycontext <- function(prtoken,intoken) {
+    prtoken     <- prtoken[prtoken$ahead %in% cntxguess,]     # Only tokens in cooccurrence matrix
+    intoken     <- intoken[intoken %in% cntxguess]
+    cntxtp      <- fcmp[prtoken$ahead,intoken]                # Cooccurrence probabilities
+    cntxtp      <- apply(cntxtp,1,sum)                        # Add by prediction token
+    psmcntxt    <- sum(prtoken$psm)                           # total prob of pred tokens
+    prtoken$psm <- prtoken$psm*cntxtp                         #    scale by context factor
+    psmcntxt    <- psmcntxt/sum(prtoken$psm)                  #    total scale
+    prtoken$psm <- prtoken$psm*psmcntxt                       #    renormalize to previous total prob.
+    prtoken
 }
 
-# guesswork - guess next word when no n-gram matches: max cooccurrence with input tokens
+
+# ahead - look ahead tokens t for level n (n>=2)
+
+ahead <- function(intoken,n, cntxt = FALSE) {
+    lakey <- paste(tail(intoken,n-1), collapse = nsplit)               # Look-ahead key
+    t     <- as.tbl(lookahead[[n]][lakey])                             #    ahead tibble
+    l     <- length(t$ahead)                                           #    result count (1 could be NA!)
+    if ((l>1)&cntxt)                                                   # Context boosted
+        t <- bycontext(t,intoken)                                      #
+    t <- arrange(t,desc(psm))                                          #    sort by prob
+    t[1:min(length(t$ahead),predsetsize),]                             #    truncate to predsize
+}
+
+# guesswork - guess next word by max cooccurrence with input tokens
 
 guesswork <- function(t) {
     t<-t[t %in% cntxguess]
@@ -59,35 +72,35 @@ guesswork <- function(t) {
 
 # whatnext - return prediction set for given input string
 
-whatnext <- function(input) {
-    tkns <- intoken(input)            # split input stream in tokens
+nothing  <- function(intoken) tibble(token=paste0(intoken,nsplit),n=0,pml=0,psm=0,gt=0,ahead=NA)
 
-    ng4     <- ahead(tkns,4)          # 4-grams level
-    if (is.na(ng4$ahead[1]))          #   clonk!
-        la4 <- ng4$psm[1] <- 0
-    else
-        la4 <- lt4/length(ng4$ahead)  # discriminant value of N4 prediction
+whatnext <- function(input, cntxt = FALSE) {
+    tkns <- intoken(input)            # split input stream in tokens
+    tknl <- length(tkns)              # input length in tokens
     
-    ng3     <- ahead(tkns,3)          # 3-grams level
-    if (is.na(ng3$ahead[1]))          #   clonk!
-        la3 <- ng3$psm[1] <- 0
-    else
-        la3 <- lt3/length(ng3$ahead)  # discriminant value of N3 prediction
+    if (tknl>2) ng4 <- ahead(tkns,4,cntxt) # 4-g rams level
+    else        ng4 <- nothing(tkns)
+    if (tknl>1) ng3 <- ahead(tkns,3,cntxt) # 3-g rams level
+    else        ng3 <- nothing(tkns)
+    if (tknl>0) ng2 <- ahead(tkns,2,cntxt) # 2-g rams level
+    else        ng2 <- nothing(tkns)
+
+    la4 <- ifelse(is.na(ng4$ahead[1]), 0, lt4/length(ng4$ahead)) # discriminant value of N4 prediction
+    la3 <- ifelse(is.na(ng3$ahead[1]), 0, lt3/length(ng3$ahead)) #                       N3 prediction
+    la2 <- ifelse(is.na(ng2$ahead[1]), 0, lt2/length(ng2$ahead)) #                       N2 prediction
+    lwg <- la2+la3+la4                                           # total discriminant weight ML
     
-    ng2     <- ahead(tkns,2)          # 2-grams level
-    if (is.na(ng2$ahead[1]))          #   clonk!
-        la2 <- ng2$psm[1] <- 0
-    else
-        la2 <- lt2/length(ng2$ahead)  # discriminant value of N2 prediction
-    
-    if (la2 == 0) {                           # if not even 2 grams...
+    if (lwg == 0) {                           # if not even 2 grams...
         return(guesswork(tkns))
     }
 
-    lall    <- la2+la3+la4            # total discriminant weight
-    ng4$psm <- ng4$psm*la4/lall       # "load" each level...
-    ng3$psm <- ng3$psm*la3/lall
-    ng2$psm <- ng2$psm*la2/lall
+    la4 <- la4/lwg
+    la3 <- la3/lwg
+    la2 <- la2/lwg
+    
+    ng4$psm <- ng4$psm*la4              # "load" each level...
+    ng3$psm <- ng3$psm*la3
+    ng2$psm <- ng2$psm*la2
     ng4     <- rbind(ng4,ng3,ng2) %>%   # and merge all 
                 group_by(ahead) %>%
                 summarise(psm = sum(psm)) %>%

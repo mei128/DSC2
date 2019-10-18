@@ -4,6 +4,7 @@
 require(tidyverse)
 require(readtext)
 require(quanteda)
+require(stringi)
 require(data.table)
 
 ### Globals
