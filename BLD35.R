@@ -32,6 +32,9 @@ d    <- dim(fcmc)[1]
 for (i in 1:d)
     for (j in 1:d) fcmc[i,j]<-fcmc[i,j]/(tknc[i]+tknc[j])
 
+sw <- stopwords()
+sw <- sw[ sw %in% colnames(fcmc)]
+fcmc[sw,sw] <- 0                              # neutralize stopword cooccurrence with itself
 write_rds(fcmc,dpath_fcm_p)
 message("Saved matrix (probability)")
 rm(tokens_full, fcmc)

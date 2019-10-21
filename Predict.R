@@ -35,12 +35,16 @@ intoken <- function(input) {
 
 bycontext <- function(prtoken,intoken) {
     prtoken     <- prtoken[prtoken$ahead %in% cntxguess,]     # Only tokens in cooccurrence matrix
+    prtoken     <- prtoken[!(prtoken$ahead %in% intoken),]    # but not already in the stream
+    intoken     <- unique(intoken)
     intoken     <- intoken[intoken %in% cntxguess]
     cntxtp      <- fcmp[prtoken$ahead,intoken]                # Cooccurrence probabilities
     cntxtp      <- apply(cntxtp,1,sum)                        # Add by prediction token
-    psmcntxt    <- sum(prtoken$psm)                           # total prob of pred tokens
-    prtoken$psm <- prtoken$psm*cntxtp                         #    scale by context factor
-    psmcntxt    <- psmcntxt/sum(prtoken$psm)                  #    total scale
+    cntxtsum    <- sum(cntxtp)
+    cntxtp      <- cntxtp/cntxtsum
+    psmsum      <- sum(prtoken$psm)                           # total prob of pred tokens
+    prtoken$psm <- prtoken$psm*(cntxtp)                       #    scale by context factor
+    psmcntxt    <- psmsum/sum(prtoken$psm)                    #    total scale
     prtoken$psm <- prtoken$psm*psmcntxt                       #    renormalize to previous total prob.
     prtoken
 }
