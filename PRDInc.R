@@ -18,5 +18,5 @@ dpath_lookahead <- "data/lookahead.rds"        # Look ahead table
 
 nsplit          <- "_"                         # ngram separator symbol (sync bldinclude)
 predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
-predsetshow     <- 5                           # number of terms to show from prediction set
+predsetshow     <- 10                          # number of terms to show from prediction set
 

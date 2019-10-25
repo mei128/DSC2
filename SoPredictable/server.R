@@ -8,20 +8,32 @@
 #
 
 library(shiny)
+source("../PRDInc.R")
+
+btnid    <- paste0("BTN",1:predsetshow)
+btncount <- 0
+
 
 predbtn <- function(bid,predword) {
-    actionButton(bid,predword, class="btn btn-outline-secondary")
+    actionButton(bid,predword, class="btn btn-secondary")
 }
+
+clearPredButtons <- function() {
+}
+
+showPredButtons <- function(prediction) {
+}
+
 
 shinyServer(function(input, output, session) {
 
     output$tickerCount <- renderText({
         n <- nchar(input$inText)
-        if (n>8) {
-            insertUI("#predRow",where = "afterBegin", ui = predbtn("goB", input$inText))
-        }
         paste0(n," chars so far.")
+        if (n>8) output$predButtons <- renderUI(predbtn("goB", input$inText))
     })
+
+    
     
     observeEvent(input$clrButton, {
         updateTextInput(session, "inText", value = "")

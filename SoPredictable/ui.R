@@ -15,8 +15,8 @@ shinyUI(fluidPage(
     style = "width: 95%",
     fluidRow(h3("So Predictable...")),
     fluidRow(column(11, textInput("inText", label = NULL, value = "", width="100%")),
-             column( 1, actionButton("clrButton", label = "Clear", class = "btn btn-warning"))),
-    fluidRow(column(11,div(id="predRow","")),
+             column( 1, actionButton("clrButton", label = "Clear", class = "btn btn-danger"))),
+    fluidRow(column(11, uiOutput("predButtons")),
              column( 1, "")),
     fluidRow(hr(id="sep")),
     fluidRow(tabsetPanel(
