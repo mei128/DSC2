@@ -15,8 +15,8 @@ ui <- fluidPage(
     # theme = "bootstrap.min.css",
     style = "width: 95%",
     fluidRow(h3("So Predictable...")),
-    fluidRow(column(11,textInput("inStream",label=NULL, value="", width='100%')),
-             column(1,actionButton("clrButton","Clear",class = "btn btn-warning", width='100%'))),
+    fluidRow(textInput("inText", label = NULL, value = "", width="90%"),
+             actionButton("clrButton","Doit",class = "btn btn-warning")),
     fluidRow(id="predRow",""),
     fluidRow(hr(id="sEparator")),
     fluidRow(
@@ -28,14 +28,32 @@ ui <- fluidPage(
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
-
-    output$tickerCount <- renderText({
-        n <- nchar(input$inStream)
-        if (n>8) {
-            insertUI("#predictRowr",where = "beforeEnd", ui = actionButton("goButton", input$inStream, class ="btn btn-secondary"))
-            }
-        paste0(n," chars so far.")
+server <- function(input, output, session) {
+    
+    pega <- function(x,y) {
+        paste(x," -- ",y)
+    }
+    
+    trigger <- reactiveValues()
+    trigger$flag <- FALSE
+    counter <- 0
+    observeEvent(input$clrButton, {
+        insertUI("#predRow",where="afterBegin",div(id="btnList"))
+        for (i in 1:5){
+            insertUI("#btnList",where="afterBegin",actionButton(paste0("B",i),paste0("Botón ",i)))
+        }
+    })
+    observeEvent(input$B1, {print("uno")})
+    observeEvent(input$B2, {trigger$flag<-!trigger$flag
+        print("dos")})
+    observeEvent(input$B3, {updateTextInput(session,"B1",label=pega("Bton","UNO"))})
+    observeEvent(input$B4, {
+        counter <<- counter + 1
+        print(counter)})
+    observeEvent(input$B5, {removeUI("#btnList")})
+    observe({
+        t<-trigger
+        print(paste0("VALE ",t))
     })
 }
 

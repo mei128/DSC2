@@ -21,7 +21,7 @@ if (!exists("prdinclude")) source("./PRDInc.R")
 
 # intoken - Convert input to character vector by tokens
 
-intoken <- function(input) {
+inTokenize <- function(input) {
     t <- tokens(stri_trans_tolower(input),
                 remove_punct   = TRUE,
                 remove_symbols = TRUE,
@@ -31,7 +31,7 @@ intoken <- function(input) {
     return(t)
 }
 
-# context - filter and reassign probabiliy by context
+# bycontext - filter and reassign probabiliy by context
 
 bycontext <- function(prtoken,intoken) {
     prtoken     <- prtoken[prtoken$ahead %in% cntxguess,]     # Only tokens in cooccurrence matrix
@@ -73,14 +73,11 @@ guesswork <- function(t) {
     return(tibble(ahead=names(inin),psm=inin))
 }
 
+nothing  <- function(intoken) tibble(token=paste0(intoken,nsplit),n=0,pml=0,psm=0,gt=0,ahead=NA)
 
 # whatnext - return prediction set for given input string
 
-nothing  <- function(intoken) tibble(token=paste0(intoken,nsplit),n=0,pml=0,psm=0,gt=0,ahead=NA)
-
-whatnext <- function(input, cntxt = FALSE) {
-    tkns <- intoken(input)            # split input stream in tokens
-    tknl <- length(tkns)              # input length in tokens
+whatnext <- function(tkns, tknl, cntxt = FALSE) {
     
     if (tknl>2) ng4 <- ahead(tkns,4,cntxt) # 4-g rams level
     else        ng4 <- nothing(tkns)
@@ -112,6 +109,12 @@ whatnext <- function(input, cntxt = FALSE) {
     ng4[1:min(length(ng4$ahead),predsetshow),]
 }
 
+inText <- function(input) {
+    tkns <- inTokenize(input)       # split input stream in tokens
+    tknl <- length(tkns)            # input length in tokens
+    whatnext(tkns,tknl,TRUE)
+    
+}
 ### Do it
 
 lookahead <- read_rds(dpath_lookahead)                          # Load look ahead ngrams
