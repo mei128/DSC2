@@ -13,9 +13,21 @@
 # of the model does not increase prediction quality significantly.
 #
 
-### Include common
+### Packages
 
-if (!exists("prdinclude")) source("./PRDInc.R")
+require(tidyverse)
+require(readtext)
+require(quanteda)
+require(stringi)
+require(data.table)
+
+### Globals
+
+dpath_fcm_p     <- "./fcm_p.rds"               # co-occurrence matrix - ML
+dpath_lookahead <- "./lookahead.rds"           # Look ahead table
+
+predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
+predsetshow     <- 10                          # number of terms to show from prediction set
 
 ## Support
 
@@ -34,7 +46,7 @@ inTokenize <- function(input) {
 # bycontext - filter and reassign probabiliy by context
 
 bycontext <- function(prtoken,intoken) {
-message("DEBUG in bycontext")
+
     prtoken     <- prtoken[!(prtoken$ahead %in% intoken),]    # Only tokens not already in the stream
     intoken     <- unique(intoken)
     intoken     <- intoken[intoken %in% alltokens]
@@ -53,14 +65,12 @@ message("DEBUG in bycontext")
 
 # ahead - look ahead for level n (n>=2); returns NULL if nothing found
 
-ahead <- function(tkns,n, cntxt = FALSE) {
-message("DEBUG in ahead")
+ahead <- function(tkns,n) {
+
     lakey <- paste(tail(tkns,n-1), collapse = nsplit)       # Look-ahead key
     pred  <- as.tbl(lookahead[[n]][lakey])                  #    ahead tibble
     if (is.na(pred$ahead[1])) return(NULL)                  # Nothing found: return null
     plen  <- length(pred$ahead)                             # Result count
-    if ((plen>1)&cntxt)                                     # Context boosted
-        pred <- bycontext(pred,tkns)                        #    rearrange by context influence
     pred  <- arrange(pred,desc(psm))                        # Sort by descending smoothed prob
     pred[1:min(plen,predsetsize), c(3,2)]                   # Truncate to predsetsize - trim to "ahead" and "psm"
 }
@@ -68,55 +78,126 @@ message("DEBUG in ahead")
 # guesswork - guess next word by max cooccurrence with input tokens
 
 guesswork <- function(tkns) {
-message("DEBUG in guesswork")
+
     tkns  <- tkns[tkns %in% alltokens]
     tknl  <- length(tkns)
-    if (tknl==0) return(bestguess)
+    if (tknl==0) return(bestguess[1:predsetsize,])
     infcm <- fcmp[tkns,]
-    if (tknl>1) infcm <- sort(apply(inin, 2, sum),decreasing = TRUE)[1:predsetsize]
+    if (tknl>1) infcm <- sort(apply(infcm, 2, sum),decreasing = TRUE)[1:predsetsize]
     else        infcm <- sort(infcm, decreasing = TRUE)[1:predsetsize]
     return(tibble(ahead=names(infcm),psm=infcm))
 }
 
-# whatnext - return prediction set for given input string
+# whatnext - return prediction set for given input string - full tokens
 
-whatnext <- function(tkns, tknl, cntxt = FALSE) {
-    
+nextfull <- function(tkns, tknl, cntxt = FALSE) {
+
     ng4 <- ng3 <- ng2 <- NULL
-    if (tknl>2) ng4 <- ahead(tkns,4,cntxt)                  # 4-g rams level
-    if (tknl>1) ng3 <- ahead(tkns,3,cntxt)                  # 3-g rams level
-    if (tknl>0) ng2 <- ahead(tkns,2,cntxt)                  # 2-g rams level
-
-    if ((ld4 <- length(ng4$ahead))>0) ld4 <- lt4/ld4        # discriminant value of N4 prediction
-    if ((ld3 <- length(ng3$ahead))>0) ld3 <- lt3/ld3        #                    of N3 prediction
-    if ((ld2 <- length(ng2$ahead))>0) ld2 <- lt2/ld2        #                    of N2 prediction
-                                      lwg <- ld2+ld3+ld4    # total discriminant weight ML
+    ld4 <- ld3 <- ld2 <- 0
     
-    if (lwg == 0) {                                         # if not even 2 grams natched
+    if (tknl>0) {                   # 2-grams level
+        ng2 <- ahead(tkns,2)        #   predictions
+        ld2 <- length(ng2$ahead)    #   count
+    }
+    if ((tknl>1)&(ld2>0)) {         # 3-g rams level
+        ng3 <- ahead(tkns,3)        #   predictions
+        ld3 <- length(ng3$ahead)    #   count
+    }
+    if ((tknl>2)&(ld3>0)) {         # 4-g rams level
+        ng4 <- ahead(tkns,3)        #   predictions
+        ld4 <- length(ng3$ahead)    #   count
+    }
+    
+    if (ld2>0) ld2 <- lt2/ld2       # discriminant value of N2 prediction
+    if (ld3>0) ld3 <- lt3/ld3       #                    of N3 prediction
+    if (ld4>0) ld4 <- lt4/ld4       #                    of N4 prediction
+               lwg <- ld2+ld3+ld4   # total discriminant weight ML
+    
+    if (lwg == 0) {                 # if not even 2 grams natched
         return(guesswork(tkns))
     }
 
-    ld4 <- ld4/lwg
-    ld3 <- ld3/lwg
     ld2 <- ld2/lwg
+    ld3 <- ld3/lwg
+    ld4 <- ld4/lwg
     
-    ng4$psm <- ng4$psm*ld4              # "load" each level...
+    ng2$psm <- ng2$psm*ld2              # "load" each level...
     ng3$psm <- ng3$psm*ld3
-    ng2$psm <- ng2$psm*ld2
+    ng4$psm <- ng4$psm*ld4 
     ngpred  <- rbind(ng4,ng3,ng2) %>%   # and merge all 
                 group_by(ahead) %>%
-                summarise(psm = sum(psm)) %>%
-                arrange(desc(psm))
-    ngpred[1:min(length(ngpred$ahead),predsetsize),]
+                summarise(psm = sum(psm))
+
+        if (cntxt&(tknl>((ld2>0)+(ld3>0)+(ld4>0))))
+        ngpred <- bycontext(ngpred,tkns)
+    
+    ngpred  <- arrange(ngpred, desc(psm))
+    ngpred  <- ngpred[1:min(length(ngpred$ahead),predsetsize),]
 }
 
-inText <- function(input) {
-    tkns <- inTokenize(input)       # split input stream in tokens
-    tknl <- length(tkns)            # input length in tokens
-    whatnext(tkns,tknl,FALSE)
+# whatpart - return prediction set for given input string - partial last token
+
+nextpart <- function(tkns, tknl, cntxt = FALSE) {
     
+    pg4 <- pg3 <- pg2 <- pg1 <- NULL
+    pd4 <- pd3 <- pd2 <- pd1 <- 0
+    
+    ltkn <- tkns[tknl]                              # 1-gram 
+    lreg <- paste0("^",ltkn,".*")
+    pg1  <- bestguess[grep(lreg,bestguess$ahead),]  #   check for partial last token
+    pd1  <- length(pg1$ahead)
+    if (pd1 ==0) return(NULL)                       # No partial match for last token: NULL
+    if (tknl==1) return(pg1)                        # Only one level: done
+    
+    tkns <- tkns[-tknl]                             # strip last token
+    tknl <- tknl-1
+    
+    if (tknl>0) {                                   # 2-grams level
+        pg2 <- ahead(tkns,2)                        #   predictions
+        pg2 <- pg2[grep(lreg,pg2$ahead),]           #   partial match to tlast token
+        pd2 <- length(pg2$ahead)                    #   count
+    }
+    if ((tknl>1)&(pd2>0)) {                         # 3-g rams level
+        pg3 <- ahead(tkns,3)                        #   predictions
+        pg3 <- pg3[grep(lreg,pg3$ahead),]           #   partial match to tlast token
+        pd3 <- length(pg3$ahead)                    #   count
+    }
+    if ((tknl>2)&(pd3>0)) {                         # 4-g rams level
+        pg4 <- ahead(tkns,3)                        #   predictions
+        pg4 <- pg4[grep(lreg,pg4$ahead),]           #   partial match to tlast token
+        pd4 <- length(pg4$ahead)                    #   count
+    }
+    
+    if (pd1>0) pd1 <- lt1/pd1           # discriminant value of N1 prediction
+    if (pd2>0) pd2 <- lt2/pd2           #                    of N2 prediction
+    if (pd3>0) pd3 <- lt3/pd3           #                    of N3 prediction
+    if (pd4>0) pd4 <- lt4/pd4           #                    of N4 prediction
+               pwg <- pd1+pd2+pd3+pd4   # total discriminant weight ML
+    
+    pd1 <- pd1/pwg
+    pd2 <- pd2/pwg
+    pd3 <- pd3/pwg
+    pd4 <- pd4/pwg
+    
+    pg1$psm <- pg1$psm*pd1              # "load" each level...
+    pg2$psm <- pg2$psm*pd2
+    pg3$psm <- pg3$psm*pd3
+    pg4$psm <- pg4$psm*pd4
+    pgpred  <- rbind(pg4,pg3,pg2,pg1) %>%   # and merge all 
+        group_by(ahead) %>%
+        summarise(psm = sum(psm))
+
+    tkns   <- c(tkns,ltkn)              # restore in token list
+    tknl   <- tknl + 1
+    
+    if (cntxt&(tknl>((pd1>0)+(pd2>0)+(pd3>0)+(pd4>0))))
+        pgpred <- bycontext(pgpred,tkns)
+
+    pgpred <- arrange(pgpred,desc(psm))
+    pgpred <- pgpred[1:min(length(pgpred$ahead),predsetsize),]
 }
-### Do it
+
+### Initialize predictor data
 
 lookahead <- read_rds(dpath_lookahead)                          # Load look ahead ngrams
 for (i in 1:4)                                                  #    and for each level
@@ -126,7 +207,7 @@ lt4       <- length(lookahead[[4]]$ahead)                       # N-gram table s
 lt3       <- length(lookahead[[3]]$ahead)                       #
 lt2       <- length(lookahead[[2]]$ahead)                       #
 lt1       <- length(lookahead[[1]]$ahead)                       #
-bestguess <- arrange(lookahead[[1]],desc(psm))[1:predsetsize,c(3,2)]  # Best single token guess, for speed
-alltokens <- lookahead[[1]]$token                                     # Tokens in prediction set, for speed
+bestguess <- arrange(lookahead[[1]],desc(psm))[,c(3,2)]         # Best single token guess, for speed
+alltokens <- bestguess$ahead                                    # Tokens in prediction set, for speed
 
 
