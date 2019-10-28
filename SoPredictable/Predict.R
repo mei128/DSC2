@@ -26,6 +26,7 @@ require(data.table)
 dpath_fcm_p     <- "./fcm_p.rds"               # co-occurrence matrix - ML
 dpath_lookahead <- "./lookahead.rds"           # Look ahead table
 
+nsplit          <- "_"                         # Token separator in ngram tables
 predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
 predsetshow     <- 10                          # number of terms to show from prediction set
 
@@ -33,7 +34,7 @@ predsetshow     <- 10                          # number of terms to show from pr
 
 # intoken - Convert input to character vector by tokens
 
-inTokenize <- function(input) {
+tokenize <- function(input) {
     t <- tokens(stri_trans_tolower(input),
                 remove_punct   = TRUE,
                 remove_symbols = TRUE,
@@ -53,12 +54,10 @@ bycontext <- function(prtoken,intoken) {
     if ((length(prtoken$ahead)<2)|(length(intoken)<2)) return(prtoken)   # No context: nothing changes
     cntxtp      <- fcmp[prtoken$ahead,intoken]                # Cooccurrence probabilities
     cntxtp      <- apply(cntxtp,1,sum)                        # Add by prediction token
-    cntxtsum    <- sum(cntxtp)
-    cntxtp      <- cntxtp/cntxtsum
-    psmsum      <- sum(prtoken$psm)                           # total prob of pred tokens
-    prtoken$psm <- prtoken$psm*(cntxtp)                       #    scale by context factor
-    psmcntxt    <- psmsum/sum(prtoken$psm)                    #    total scale
-    prtoken$psm <- prtoken$psm*psmcntxt                       #    renormalize to previous total prob.
+#    psmsum      <- sum(prtoken$psm)                           # total prob of pred tokens
+    prtoken$psm <- prtoken$psm*(cntxtp)                       # stretch by context factor
+#    psmsum      <- psmsum/sum(prtoken$psm)                    # scale after stretch
+#    prtoken$psm <- prtoken$psm*psmsum                         #    renormalize to previous total prob.
     prtoken
 }
 
@@ -113,26 +112,32 @@ nextfull <- function(tkns, tknl, cntxt = FALSE) {
     if (ld4>0) ld4 <- lt4/ld4       #                    of N4 prediction
                lwg <- ld2+ld3+ld4   # total discriminant weight ML
     
-    if (lwg == 0) {                 # if not even 2 grams natched
-        return(guesswork(tkns))
+    if (lwg > 0) {                  # if prediction success
+
+        ld2 <- ld2/lwg
+        ld3 <- ld3/lwg
+        ld4 <- ld4/lwg
+        
+        ng2$psm <- ng2$psm*ld2              # "load" each level...
+        ng3$psm <- ng3$psm*ld3
+        ng4$psm <- ng4$psm*ld4 
+        ngpred  <- rbind(ng4,ng3,ng2) %>%   # and merge all 
+            group_by(ahead) %>%
+            summarise(psm = sum(psm))
+        
+        if (cntxt&(tknl>((ld2>0)+(ld3>0)+(ld4>0))))
+            ngpred <- bycontext(ngpred,tkns)
+        
+        ngpred  <- arrange(ngpred, desc(psm))
+        ngpred  <- ngpred[1:min(length(ngpred$ahead),predsetsize),]
+    
+    } else {                        # else (if fail to precit) guess
+        ngpred <- guesswork(tkns)
     }
 
-    ld2 <- ld2/lwg
-    ld3 <- ld3/lwg
-    ld4 <- ld4/lwg
-    
-    ng2$psm <- ng2$psm*ld2              # "load" each level...
-    ng3$psm <- ng3$psm*ld3
-    ng4$psm <- ng4$psm*ld4 
-    ngpred  <- rbind(ng4,ng3,ng2) %>%   # and merge all 
-                group_by(ahead) %>%
-                summarise(psm = sum(psm))
-
-        if (cntxt&(tknl>((ld2>0)+(ld3>0)+(ld4>0))))
-        ngpred <- bycontext(ngpred,tkns)
-    
-    ngpred  <- arrange(ngpred, desc(psm))
-    ngpred  <- ngpred[1:min(length(ngpred$ahead),predsetsize),]
+    psmsum  <- sum(ngpred$psm)
+    ngpred$psm <- ngpred$psm/psmsum
+    return(ngpred)
 }
 
 # whatpart - return prediction set for given input string - partial last token
@@ -146,9 +151,9 @@ nextpart <- function(tkns, tknl, cntxt = FALSE) {
     lreg <- paste0("^",ltkn,".*")
     pg1  <- bestguess[grep(lreg,bestguess$ahead),]  #   check for partial last token
     pd1  <- length(pg1$ahead)
+
     if (pd1 ==0) return(NULL)                       # No partial match for last token: NULL
-    if (tknl==1) return(pg1)                        # Only one level: done
-    
+
     tkns <- tkns[-tknl]                             # strip last token
     tknl <- tknl-1
     
@@ -195,6 +200,9 @@ nextpart <- function(tkns, tknl, cntxt = FALSE) {
 
     pgpred <- arrange(pgpred,desc(psm))
     pgpred <- pgpred[1:min(length(pgpred$ahead),predsetsize),]
+    psmsum  <- sum(pgpred$psm)
+    pgpred$psm <- pgpred$psm/psmsum
+    return(pgpred)
 }
 
 ### Initialize predictor data
