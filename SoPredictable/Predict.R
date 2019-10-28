@@ -124,7 +124,7 @@ nextfull <- function(tkns, tknl, cntxt = FALSE) {
         ngpred  <- rbind(ng4,ng3,ng2) %>%   # and merge all 
             group_by(ahead) %>%
             summarise(psm = sum(psm))
-        
+     
         if (cntxt&(tknl>((ld2>0)+(ld3>0)+(ld4>0))))
             ngpred <- bycontext(ngpred,tkns)
         
