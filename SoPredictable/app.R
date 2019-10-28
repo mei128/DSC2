@@ -44,7 +44,7 @@ ui <- fluidPage(
         tabPanel("Words", div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
                           div(plotOutput("wordPlot"))), 
         tabPanel("Inner working", tableOutput("predTable")), 
-        tabPanel("Instructions", helpText("Let's see how this looks"))))
+        tabPanel("Help", includeHTML("./help.html"))))
 )
 
 ### Server function ###########################################################
