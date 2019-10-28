@@ -150,7 +150,8 @@ server <- function(input, output, session) {
         context() | typed() 
         removeUI("#predButtons")
         if (inCount>0) {
-            predset <<- nextfull(inTokens,l,context)
+            if (inPart) predset <<- nextpart(inTokens,inCount,context())
+            else        predset <<- nextfull(inTokens,inCount,context())
             addPredButtons(predset$ahead[1:min(predsetshow,length(predset$ahead))])
             output$wordPlot <- renderPlot({
                 if (input$chartMode == "W") wordleChart()
