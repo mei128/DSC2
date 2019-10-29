@@ -23,8 +23,8 @@ require(data.table)
 
 ### Globals
 
-dpath_fcm_p     <- "./fcm_p.rds"               # co-occurrence matrix - ML
-dpath_lookahead <- "./lookahead.rds"           # Look ahead table
+dpath_fcm_p     <- "./80coverage/fcm_p.rds"               # co-occurrence matrix - ML
+dpath_lookahead <- "./80coverage/lookahead.rds"           # Look ahead table
 
 nsplit          <- "_"                         # Token separator in ngram tables
 predsetsize     <- 50                          # max prediction set size: truncate prediction to this size
