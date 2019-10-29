@@ -8,16 +8,18 @@
 
 source("./Predict.R")
 require(shiny)
+require(xtable)
 
 
 ### addPredButtons: Create DIV with buttons for each predicted word ###########
 
-addPredButtons <- function(prediction) {
+addPredButtons <- function(prediction, part = FALSE) {
     insertUI("#predRow",where="afterBegin",div(id="predButtons"))
+    btnclass <- ifelse(part,"btn btn-warning","btn btn-success")
     for(i in length(prediction):1)
         insertUI("#predButtons", where="afterBegin",
                  actionButton(paste0("BTN",i),
-                 prediction[i], class="btn btn-success"))
+                 prediction[i], class=btnclass))
 }
 
 
@@ -35,15 +37,16 @@ ui <- fluidPage(
     #theme = "bootstrap.css",
     style = "width: 95%",
     fluidRow(column(10, h2("So Predictable...")),
-             column( 2, checkboxInput("cntxtToggle", "Context Boost", FALSE))),
+             column( 2, checkboxInput("cntxtToggle", "Context", FALSE))),
     fluidRow(column(10, textInput("inText", label = NULL, value = "", width="100%")),
              column( 2, actionButton("clrButton", label = "Clear", class = "btn btn-danger"))),
     fluidRow(id="predRow"),
     fluidRow(hr(id="sep")),
     fluidRow(tabsetPanel(
-        tabPanel("Words", div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
-                          div(plotOutput("wordPlot"))), 
-        tabPanel("Inner working", tableOutput("predTable")), 
+        tabPanel("Word Charts",
+                 div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
+                 div(plotOutput("wordPlot"))), 
+        tabPanel("Inner Data", h3("TEMP - JUST CHECKING"), tableOutput("predTable")), 
         tabPanel("Help", includeHTML("./help.html"))))
 )
 
@@ -104,10 +107,10 @@ server <- function(input, output, session) {
     }
     
     
-    ### Reactivity - Observers and event handlers #############################
+    ### Core Server: Output, reactivitym and event handlers ###################
     #                                                                         #
     
-
+    
     # Input text event handler ################################################
     
     observeEvent(input$inText, {
@@ -145,18 +148,22 @@ server <- function(input, output, session) {
     observeEvent(input$BTN8,  { updateInput( 8, inPart, inLast) })
     observeEvent(input$BTN9,  { updateInput( 9, inPart, inLast) })
     observeEvent(input$BTN10, { updateInput(10, inPart, inLast) })
-    
+
+    # main observer: trigger prediction when input changes ####################    
     observe({
         context() | typed() 
         removeUI("#predButtons")
         if (inCount>0) {
             if (inPart) predset <<- nextpart(inTokens,inCount,context())
             else        predset <<- nextfull(inTokens,inCount,context())
-            addPredButtons(predset$ahead[1:min(predsetshow,length(predset$ahead))])
+            addPredButtons(predset$ahead[1:min(predsetshow,length(predset$ahead))], inPart)
             output$wordPlot <- renderPlot({
                 if (input$chartMode == "W") wordleChart()
                 else                        probableChart()
             })
+            output$predTable <- renderTable({xtable(predset)})
+        } else {
+            output$predTable <- renderTable({NULL})
         }
     })
 

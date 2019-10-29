@@ -1,11 +1,13 @@
-<p>This Shiny App is a simple type-ahead predictor. Just type in the input field and it will suggest a probable next word in form of clickable buttons under your input. Click on one of the suggested terms and it will be added to your input. If the suggestion is made in the middle of a word your word will be completed. The number of suggested terms is capped to the 8 most probable terms of the predicted set.</p>
+<h3>Help</h3>
+<p>This Shiny App is a simple type-ahead predictor. Just type in the input field and it will suggest a probable next word. Click on one of the suggested terms and it will be added to your input. If the suggestion is made in the middle of a word (indicated by a different button color) your word will be completed. You can click on the input again to continue typing or edit your input in any way you want. Caveat: prediction will only act on the right-end, not where you type.</p> 
 <p>Click on the Clear button to reset your input.</p>
-<h3>Charts</h3>
-<p>The charts tab will display a word cloud or a probability table of all terms in the predcition set (normalized for the set), not just the suggested buttons. You can toggle between one chart format and the other. The charts will show you the relative porbability of the terms suggested.</p>
-<h3>Inner Data</h3>
-<p>The inner data tab will show the calculations for the predicted set in each of the levels of the algorithm, or it will indicate that the algorithm is guessing based on context terms.</p>
-<h3>Context Boost</h3>
-<p>When the context boost toglle is selected, the prediction set is altered based on the context provided by the entire input stream and not  just the last three tokens. For the effect to be apreciated use terms with heavy influence in the context (i.e. congress, committee, government, ... )</p>
-<h3>To learn more</h3>
+<p>The number of suggested terms is capped to the 8 most probable terms of the predicted set.</p>
+<h4>Word Charts</h4>
+<p>The <b>Word Charts</b> tab will display a word cloud or a probability table of all terms in the predcition set (probability is normalized for the set), not just the suggested buttons. You can toggle between chart formats. The charts are a good indicator the relative porbability of the terms suggested.</p>
+<h4>Inner Data</h4>
+<p>The <b>Inner Data</b> tab will show the calculations for the predicted set in each of the levels of the algorithm, or it will indicate that the algorithm is guessing based on context terms.</p>
+<h4>Context Boost</h4>
+<p>When the <b>context</b> toggle is selected, the prediction set is altered based on the context provided by the entire input stream and not  just the last three tokens. For the effect to be apreciated use terms with heavy influence in the context (i.e. congress, committee, government, ... )</p>
+<h4>To learn more</h4>
 <p>Please visit <a href="http://www.google.com">SoPredictable, a simple type-ahead prediction model</a> to learn more about the algorithm used to build this app.</p>
 
