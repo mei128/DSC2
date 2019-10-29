@@ -41,7 +41,7 @@ dpath_pattern   <- paste0("*",ngext,".rds$")   # trail pattern of ngrams of subs
 chnknum         <- 50                          # number of subsamples
 chnksize        <- 20000                       # size of each sample
 
-coverage        <- 0.7                         # corpus coverage threshold for vocabulary trimming
+coverage        <- 0.8                         # corpus coverage threshold for vocabulary trimming
 trsmpl          <- 1                           # percentage to total sample included in training set
 
 nsplit          <- "_"                         # ngram separator symbol (sync prdinclude)
