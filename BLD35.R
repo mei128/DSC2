@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 40 : Create co-occurrence table for similar total size sample.
+# Step 35 : Create co-occurrence table for similar total size sample.
 # 
 
 ### Include common

@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 50 : Merge all ngram tables created
+# Step 40 : Merge all ngram tables created
 #
 
 ### Include common

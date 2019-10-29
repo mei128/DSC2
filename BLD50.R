@@ -1,7 +1,7 @@
 #
 # DDS Capstone - Manuel Esteban-Infantes
 #
-# Step 60 : Build probablities for ngrams, GT discounted count, and look ahead table
+# Step 50 : Build probablities for ngrams, GT discounted count, and look ahead table
 #
 
 ### Include common
