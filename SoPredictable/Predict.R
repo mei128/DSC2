@@ -144,65 +144,65 @@ nextfull <- function(tkns, tknl, cntxt = FALSE) {
 
 nextpart <- function(tkns, tknl, cntxt = FALSE) {
     
-    pg4 <- pg3 <- pg2 <- pg1 <- NULL
-    pd4 <- pd3 <- pd2 <- pd1 <- 0
+    ng4 <- ng3 <- ng2 <- ng1 <- NULL
+    ld4 <- ld3 <- ld2 <- ld1 <- 0
     
     ltkn <- tkns[tknl]                              # 1-gram 
     lreg <- paste0("^",ltkn,".*")
-    pg1  <- bestguess[grep(lreg,bestguess$ahead),]  #   check for partial last token
-    pd1  <- length(pg1$ahead)
+    ng1  <- bestguess[grep(lreg,bestguess$ahead),]  #   check for partial last token
+    ld1  <- length(ng1$ahead)
 
-    if (pd1 ==0) return(NULL)                       # No partial match for last token: NULL
+    if (ld1 ==0) return(NULL)                       # No partial match for last token: NULL
 
     tkns <- tkns[-tknl]                             # strip last token
     tknl <- tknl-1
     
     if (tknl>0) {                                   # 2-grams level
-        pg2 <- ahead(tkns,2)                        #   predictions
-        pg2 <- pg2[grep(lreg,pg2$ahead),]           #   partial match to tlast token
-        pd2 <- length(pg2$ahead)                    #   count
+        ng2 <- ahead(tkns,2)                        #   predictions
+        ng2 <- ng2[grep(lreg,ng2$ahead),]           #   partial match to tlast token
+        ld2 <- length(ng2$ahead)                    #   count
     }
-    if ((tknl>1)&(pd2>0)) {                         # 3-g rams level
-        pg3 <- ahead(tkns,3)                        #   predictions
-        pg3 <- pg3[grep(lreg,pg3$ahead),]           #   partial match to tlast token
-        pd3 <- length(pg3$ahead)                    #   count
+    if ((tknl>1)&(ld2>0)) {                         # 3-g rams level
+        ng3 <- ahead(tkns,3)                        #   predictions
+        ng3 <- ng3[grep(lreg,ng3$ahead),]           #   partial match to tlast token
+        ld3 <- length(ng3$ahead)                    #   count
     }
-    if ((tknl>2)&(pd3>0)) {                         # 4-g rams level
-        pg4 <- ahead(tkns,3)                        #   predictions
-        pg4 <- pg4[grep(lreg,pg4$ahead),]           #   partial match to tlast token
-        pd4 <- length(pg4$ahead)                    #   count
+    if ((tknl>2)&(ld3>0)) {                         # 4-g rams level
+        ng4 <- ahead(tkns,3)                        #   predictions
+        ng4 <- ng4[grep(lreg,ng4$ahead),]           #   partial match to tlast token
+        ld4 <- length(ng4$ahead)                    #   count
     }
     
-    if (pd1>0) pd1 <- lt1/pd1           # discriminant value of N1 prediction
-    if (pd2>0) pd2 <- lt2/pd2           #                    of N2 prediction
-    if (pd3>0) pd3 <- lt3/pd3           #                    of N3 prediction
-    if (pd4>0) pd4 <- lt4/pd4           #                    of N4 prediction
-               pwg <- pd1+pd2+pd3+pd4   # total discriminant weight ML
+    if (ld1>0) ld1 <- lt1/ld1           # discriminant value of N1 prediction
+    if (ld2>0) ld2 <- lt2/ld2           #                    of N2 prediction
+    if (ld3>0) ld3 <- lt3/ld3           #                    of N3 prediction
+    if (ld4>0) ld4 <- lt4/ld4           #                    of N4 prediction
+               lwg <- ld1+ld2+ld3+ld4   # total discriminant weight ML
     
-    pd1 <- pd1/pwg
-    pd2 <- pd2/pwg
-    pd3 <- pd3/pwg
-    pd4 <- pd4/pwg
+    ld1 <- ld1/lwg
+    ld2 <- ld2/lwg
+    ld3 <- ld3/lwg
+    ld4 <- ld4/lwg
     
-    pg1$psm <- pg1$psm*pd1              # "load" each level...
-    pg2$psm <- pg2$psm*pd2
-    pg3$psm <- pg3$psm*pd3
-    pg4$psm <- pg4$psm*pd4
-    pgpred  <- rbind(pg4,pg3,pg2,pg1) %>%   # and merge all 
+    ng1$psm <- ng1$psm*ld1              # "load" each level...
+    ng2$psm <- ng2$psm*ld2
+    ng3$psm <- ng3$psm*ld3
+    ng4$psm <- ng4$psm*ld4
+    ngpred  <- rbind(ng4,ng3,ng2,ng1) %>%   # and merge all 
         group_by(ahead) %>%
         summarise(psm = sum(psm))
 
     tkns   <- c(tkns,ltkn)              # restore in token list
     tknl   <- tknl + 1
     
-    if (cntxt&(tknl>((pd1>0)+(pd2>0)+(pd3>0)+(pd4>0))))
-        pgpred <- bycontext(pgpred,tkns)
+    if (cntxt&(tknl>((ld1>0)+(ld2>0)+(ld3>0)+(ld4>0))))
+        ngpred <- bycontext(ngpred,tkns)
 
-    pgpred <- arrange(pgpred,desc(psm))
-    pgpred <- pgpred[1:min(length(pgpred$ahead),predsetsize),]
-    psmsum  <- sum(pgpred$psm)
-    pgpred$psm <- pgpred$psm/psmsum
-    return(pgpred)
+    ngpred <- arrange(ngpred,desc(psm))
+    ngpred <- ngpred[1:min(length(ngpred$ahead),predsetsize),]
+    psmsum  <- sum(ngpred$psm)
+    ngpred$psm <- ngpred$psm/psmsum
+    return(ngpred)
 }
 
 ### Initialize predictor data
