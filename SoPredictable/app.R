@@ -1,35 +1,18 @@
 #
-# SoPredictable
+# So Predictable
 #
 # Capstone project for JHU's Data Science Specialization course
+#
+# Manuel Esteban-Infantes
 #
 # Requires previously generatend n-grams look-up table and co-occurrence matrix
 #
 
-source("./Predict.R")
 require(shiny)
-require(xtable)
 
+### Source common to all sessions #############################################
 
-### addPredButtons: Create DIV with buttons for each predicted word ###########
-
-addPredButtons <- function(prediction, part = FALSE) {
-    insertUI("#predRow",where="afterBegin",div(id="predButtons"))
-    btnclass <- ifelse(part,"btn btn-warning","btn btn-success")
-    for(i in length(prediction):1)
-        insertUI("#predButtons", where="afterBegin",
-                 actionButton(paste0("BTN",i),
-                 prediction[i], class=btnclass))
-}
-
-
-### isPartial: check if token tkn partially matches a token in predictor ######
-
-isPartial <- function(tkn) {
-    any(grep(paste0("^",tkn),alltokens)) & !(tkn %in% alltokens)
-}
-
-
+source("./common.R")
 
 ### UI ########################################################################
 
@@ -46,13 +29,21 @@ ui <- fluidPage(
         tabPanel("Word Charts",
                  div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
                  div(plotOutput("wordPlot"))), 
-        tabPanel("Inner Data", h3("TEMP - JUST CHECKING"), tableOutput("predTable")), 
+        tabPanel("Inner Data",
+                 fillRow(div(style=iwStyle,h4(textOutput("titleC1")),tableOutput("tableC1")),
+                         div(style=iwStyle,h4(textOutput("titleC2")),tableOutput("tableC2")),
+                         div(style=iwStyle,h4(textOutput("titleC3")),tableOutput("tableC3")),
+                         div(style=iwStyle,h4(textOutput("titleC4")),tableOutput("tableC4")))), 
         tabPanel("Help", includeHTML("./help.html"))))
 )
 
 ### Server function ###########################################################
 
 server <- function(input, output, session) {
+    
+    ### Source core predicion within session context ##########################
+    
+    source("./core.R")
     
     ### Glocals: local gobals within the server function (user session) #######
     #                                                                         #
@@ -62,7 +53,6 @@ server <- function(input, output, session) {
     inCount  <- 0                                   # Typed token count
     inLast   <- ""                                  # Last typed token (or partial)
     inPart   <- FALSE                               # Last token is partial match
-    predset  <- tibble()                            # Empty predicted set
     wordle   <- dfm(tokens(paste(1:predsetsize)))   # Pre-packaged dfm for word cloud
     context  <- reactive({input$cntxtToggle})       # Context toggle : trigger
     typed    <- reactiveVal({FALSE})                # Typed trigger
@@ -75,10 +65,10 @@ server <- function(input, output, session) {
 
     updateInput <- function(btn, partial = FALSE, ltoken = "") {
         if (partial) {
-            newstream <- stri_replace_last_fixed(stream,ltoken,predset$ahead[btn])
+            newstream <- stri_replace_last_fixed(stream,ltoken,ngpred$ahead[btn])
         } else {
             s <- ifelse(str_sub(stream,-1,-1)==" ",""," ")
-            newstream <- paste(stream,predset$ahead[btn],sep=s)
+            newstream <- paste(stream,ngpred$ahead[btn],sep=s)
         }
         updateTextInput(session,"inText",value=newstream)
     }
@@ -86,13 +76,12 @@ server <- function(input, output, session) {
     # wordle chart # Hack a prebuilt dfm for speed: hard, but I got it! #######
     
     wordleChart <- function() {
-        predlen                  <- length(predset$ahead)
-        if (predlen==0) return(NULL)
-        wordle@i                 <- as.integer(rep(0,predlen))
-        wordle@p                 <- 0:predlen
-        wordle@Dim[2]            <- predlen
-        wordle@Dimnames$features <- predset$ahead
-        wordle@x                 <- round(predset$psm*200,0)
+        if (nglen==0) return(NULL)
+        wordle@i                 <- as.integer(rep(0,nglen))
+        wordle@p                 <- 0:nglen
+        wordle@Dim[2]            <- as.integer(nglen)
+        wordle@Dimnames$features <- ngpred$ahead
+        wordle@x                 <- round(ngpred$psm*200,0)
         textplot_wordcloud(wordle, random_order = FALSE, color = "steelBlue4",
                            rotation = 0.25, min_size = 1, max_size     = 5)
         
@@ -101,11 +90,59 @@ server <- function(input, output, session) {
     # probabilty chart ########################################################
     
     probableChart <- function() {
-        ggplot(data=predset,aes(x=reorder(ahead,-psm),y=psm, fill=psm))+
+        ggplot(data=ngpred,aes(x=reorder(ahead,-psm),y=psm, fill=psm))+
             geom_col()+ xlab("Prediction") + ylab("ML Probability") +
             theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
     }
     
+    # inner data tables ##not nice code but faster ############################
+    
+    innerData <- function(content = FALSE) {
+        if (!content) {
+            output$titleC1 <- renderText({"no input"})
+            output$tableC1 <- renderTable({NULL})
+            output$titleC2 <- renderText({NULL})
+            output$tableC2 <- renderTable({NULL})
+            output$titleC3 <- renderText({NULL})
+            output$tableC3 <- renderTable({NULL})
+            output$titleC4 <- renderText({NULL})
+            output$tableC4 <- renderTable({NULL})
+        } else
+        if (ngmode==2) {
+            output$titleC1 <- renderText({"Best guess"})
+            output$tableC1 <- renderTable({ngpred$ahead})
+            output$titleC2 <- renderText({NULL})
+            output$tableC2 <- renderTable({NULL})
+            output$titleC3 <- renderText({NULL})
+            output$tableC3 <- renderTable({NULL})
+            output$titleC4 <- renderText({NULL})
+            output$tableC4 <- renderTable({NULL})
+        } else
+        if (ngmode==1) {
+            output$titleC1 <- renderText({"Context guess"})
+            output$tableC1 <- renderTable({ngpred$ahead})
+            output$titleC2 <- renderText({NULL})
+            output$tableC2 <- renderTable({NULL})
+            output$titleC3 <- renderText({NULL})
+            output$tableC3 <- renderTable({NULL})
+            output$titleC4 <- renderText({NULL})
+            output$tableC4 <- renderTable({NULL})
+        } else {
+            output$titleC1 <- renderText({"N4"})
+            output$tableC1 <- renderTable({ng4$ahead})
+            output$titleC2 <- renderText({"N3"})
+            output$tableC2 <- renderTable({ng3$ahead})
+            output$titleC3 <- renderText({"N2"})
+            output$tableC3 <- renderTable({ng2$ahead})
+            if (ld1>0) {
+                output$titleC4 <- renderText({"N1"})
+                output$tableC4 <- renderTable({ng1$ahead})
+            } else {
+                output$titleC4 <- renderText({NULL})
+                output$tableC4 <- renderTable({NULL})
+            }
+        }
+    }
     
     ### Core Server: Output, reactivitym and event handlers ###################
     #                                                                         #
@@ -134,6 +171,7 @@ server <- function(input, output, session) {
         updateTextInput(session,"inText",value="")
         removeUI("#predButtons")
         output$wordPlot <- NULL
+        ngmode          <- 0
     })
 
     # prediction buttons event handler ########################################
@@ -154,17 +192,15 @@ server <- function(input, output, session) {
         context() | typed() 
         removeUI("#predButtons")
         if (inCount>0) {
-            if (inPart) predset <<- nextpart(inTokens,inCount,context())
-            else        predset <<- nextfull(inTokens,inCount,context())
-            addPredButtons(predset$ahead[1:min(predsetshow,length(predset$ahead))], inPart)
+            if (inPart) nextpart(inTokens,inCount,context())
+            else        nextfull(inTokens,inCount,context())
+            addPredButtons(ngpred$ahead[1:min(predsetshow,nglen)], inPart)
             output$wordPlot <- renderPlot({
                 if (input$chartMode == "W") wordleChart()
                 else                        probableChart()
             })
-            output$predTable <- renderTable({xtable(predset)})
-        } else {
-            output$predTable <- renderTable({NULL})
         }
+        innerData(inCount>0)
     })
 
 
