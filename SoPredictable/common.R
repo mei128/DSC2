@@ -12,7 +12,8 @@ require(quanteda)
 require(stringi)
 require(data.table)
 
-### Globals
+### Globals ###################################################################
+#                                                                             #
 
 dpath_fcm_p     <- "./fcm_p.rds"               # co-occurrence matrix (normalized) for context
 dpath_lookahead <- "./lookahead.rds"           # Look ahead table
@@ -21,9 +22,10 @@ nsplit          <- "_"                         # Token separator in ngram tables
 predsetsize     <- 40                          # max prediction set size: truncate prediction to this size
 predsetshow     <-  8                          # number of terms to show from prediction set
 
-## Support
+### Support functions #########################################################
+#                                                                             #
 
-# intoken - Convert input to character vector by tokens
+# intoken - Convert input to character vector by tokens #######################
 
 tokenize <- function(input) {
     t <- tokens(stri_trans_tolower(input),
@@ -35,7 +37,7 @@ tokenize <- function(input) {
     return(t)
 }
 
-# bycontext - filter and reassign probabiliy by context
+# bycontext - filter and reassign probabiliy by context #######################
 
 bycontext <- function(prtoken,intoken) {
 
@@ -53,7 +55,7 @@ bycontext <- function(prtoken,intoken) {
 }
 
 
-# ahead - look ahead for level n (n>=2); returns NULL if nothing found
+# ahead - look ahead for level n (n>=2); returns NULL if nothing found ########
 
 ahead <- function(tkns,n) {
 
@@ -65,7 +67,7 @@ ahead <- function(tkns,n) {
     pred[1:min(plen,predsetsize), c(3,2)]                   # Truncate to predsetsize - trim to "ahead" and "psm"
 }
 
-# guesswork - guess next word by max cooccurrence with input tokens
+### guesswork - guess next word by max cooccurrence with input tokens #########
 
 guesswork <- function(tkns) {
 
@@ -78,9 +80,6 @@ guesswork <- function(tkns) {
     return(tibble(ahead=names(infcm),psm=infcm))
 }
 
-###
-
-iwStyle <- "border-style: dotted; border-width: 0px 1px 0px 1px; border-color: #DDDDDD"
 
 ### addPredButtons: Create DIV with buttons for each predicted word ###########
 

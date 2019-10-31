@@ -16,6 +16,21 @@ source("./common.R")
 
 ### UI ########################################################################
 
+iwStyle <- "border-style: dotted; border-width: 0px 1px 0px 1px; border-color: #DDDDDD"
+
+iwCol  <- function(c) div(style=iwStyle,
+                          h4(textOutput(paste0("title",c))),
+                          htmlOutput(paste0("texto",c)),
+                          tableOutput(paste0("table",c)))
+
+panel1 <- tabPanel("Word Charts",
+                   div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
+                   div(plotOutput("wordPlot")))
+
+panel2 <- tabPanel("Inner Data", fillRow(iwCol("C1"), iwCol("C2"), iwCol("C3"), iwCol("C4")))
+
+panel3 <- tabPanel("Help", includeHTML("./help.html"))
+
 ui <- fluidPage(
     #theme = "bootstrap.css",
     style = "width: 95%",
@@ -25,17 +40,8 @@ ui <- fluidPage(
              column( 2, actionButton("clrButton", label = "Clear", class = "btn btn-danger"))),
     fluidRow(id="predRow"),
     fluidRow(hr(id="sep")),
-    fluidRow(tabsetPanel(
-        tabPanel("Word Charts",
-                 div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
-                 div(plotOutput("wordPlot"))), 
-        tabPanel("Inner Data",
-                 fillRow(div(style=iwStyle,h4(textOutput("titleC1")),tableOutput("tableC1")),
-                         div(style=iwStyle,h4(textOutput("titleC2")),tableOutput("tableC2")),
-                         div(style=iwStyle,h4(textOutput("titleC3")),tableOutput("tableC3")),
-                         div(style=iwStyle,h4(textOutput("titleC4")),tableOutput("tableC4")))), 
-        tabPanel("Help", includeHTML("./help.html"))))
-)
+    fluidRow(tabsetPanel(panel1, panel2, panel3)))
+
 
 ### Server function ###########################################################
 
@@ -97,52 +103,25 @@ server <- function(input, output, session) {
     
     # inner data tables ##not nice code but faster ############################
     
-    innerData <- function(content = FALSE) {
-        if (!content) {
-            output$titleC1 <- renderText({"no input"})
-            output$tableC1 <- renderTable({NULL})
-            output$titleC2 <- renderText({NULL})
-            output$tableC2 <- renderTable({NULL})
-            output$titleC3 <- renderText({NULL})
-            output$tableC3 <- renderTable({NULL})
-            output$titleC4 <- renderText({NULL})
-            output$tableC4 <- renderTable({NULL})
-        } else
-        if (ngmode==2) {
-            output$titleC1 <- renderText({"Best guess"})
-            output$tableC1 <- renderTable({ngpred$ahead})
-            output$titleC2 <- renderText({NULL})
-            output$tableC2 <- renderTable({NULL})
-            output$titleC3 <- renderText({NULL})
-            output$tableC3 <- renderTable({NULL})
-            output$titleC4 <- renderText({NULL})
-            output$tableC4 <- renderTable({NULL})
-        } else
-        if (ngmode==1) {
-            output$titleC1 <- renderText({"Context guess"})
-            output$tableC1 <- renderTable({ngpred$ahead})
-            output$titleC2 <- renderText({NULL})
-            output$tableC2 <- renderTable({NULL})
-            output$titleC3 <- renderText({NULL})
-            output$tableC3 <- renderTable({NULL})
-            output$titleC4 <- renderText({NULL})
-            output$tableC4 <- renderTable({NULL})
-        } else {
-            output$titleC1 <- renderText({"N4"})
-            output$tableC1 <- renderTable({ng4$ahead})
-            output$titleC2 <- renderText({"N3"})
-            output$tableC2 <- renderTable({ng3$ahead})
-            output$titleC3 <- renderText({"N2"})
-            output$tableC3 <- renderTable({ng2$ahead})
-            if (ld1>0) {
-                output$titleC4 <- renderText({"N1"})
-                output$tableC4 <- renderTable({ng1$ahead})
-            } else {
-                output$titleC4 <- renderText({NULL})
-                output$tableC4 <- renderTable({NULL})
-            }
-        }
+    innerData <- function(tiC1=NULL,teC1=NULL,taC1=NULL,
+                          tiC2=NULL,teC2=NULL,taC2=NULL,
+                          tiC3=NULL,teC3=NULL,taC3=NULL,
+                          tiC4=NULL,teC4=NULL,taC4=NULL) {
+        output$titleC1 <- renderText({tiC1})
+        output$textoC1 <- renderText({teC1})
+        output$tableC1 <- renderTable({taC1})
+        output$titleC2 <- renderText({tiC2})
+        output$textoC2 <- renderText({teC2})
+        output$tableC2 <- renderTable({taC2})
+        output$titleC3 <- renderText({tiC3})
+        output$textoC3 <- renderText({teC3})
+        output$tableC3 <- renderTable({taC3})
+        output$titleC4 <- renderText({tiC4})
+        output$textoC4 <- renderText({teC4})
+        output$tableC4 <- renderTable({taC4})
     }
+
+    innerTC <- function(t,w) paste0("Terms ",t,"<br>Weight ",round(100*w,2),"%")
     
     ### Core Server: Output, reactivitym and event handlers ###################
     #                                                                         #
@@ -199,8 +178,14 @@ server <- function(input, output, session) {
                 if (input$chartMode == "W") wordleChart()
                 else                        probableChart()
             })
-        }
-        innerData(inCount>0)
+            if (ngmode==1) innerData(tiC1 = "Context Guess", taC1 = ngpred)
+            if (ngmode==2) innerData(tiC1 = "Best Guess", taC1 = ngpred)
+            if (ngmode==0) innerData(tiC1="N1",teC1=innerTC(ld1,lw1),taC1=ng1,
+                                     tiC2="N2",teC2=innerTC(ld2,lw2),taC2=ng2,
+                                     tiC3="N3",teC3=innerTC(ld3,lw3),taC3=ng3,
+                                     tiC4="N4",teC4=innerTC(ld4,lw4),taC4=ng4)
+        } else
+            innerData()
     })
 
 
