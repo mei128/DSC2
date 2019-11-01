@@ -9,6 +9,7 @@
 #
 
 require(shiny)
+require(shinyjs)
 
 ### Source common to all sessions #############################################
 
@@ -18,13 +19,13 @@ source("./common.R")
 
 iwStyle <- "border-style: dotted; border-width: 0px 1px 0px 1px; border-color: #DDDDDD"
 
-iwCol  <- function(c) div(style=iwStyle,
+iwCol  <- function(c) div(# style=iwStyle,
                           h4(textOutput(paste0("title",c))),
                           htmlOutput(paste0("texto",c)),
                           tableOutput(paste0("table",c)))
 
 panel1 <- tabPanel("Word Charts",
-                   div(radioButtons("chartMode",NULL,c("Cloud"="W","Probability"="P"), inline = TRUE)),
+                   div(radioButtons("chartMode",NULL,c("Probability"="P","Cloud"="W"), inline = TRUE, selected = "P")),
                    div(plotOutput("wordPlot")))
 
 panel2 <- tabPanel("Inner Data", fillRow(iwCol("C1"), iwCol("C2"), iwCol("C3"), iwCol("C4")))
@@ -32,11 +33,12 @@ panel2 <- tabPanel("Inner Data", fillRow(iwCol("C1"), iwCol("C2"), iwCol("C3"), 
 panel3 <- tabPanel("Help", includeHTML("./help.html"))
 
 ui <- fluidPage(
+    useShinyjs(),
     #theme = "bootstrap.css",
     style = "width: 95%",
     fluidRow(column(10, h2("So Predictable...")),
              column( 2, checkboxInput("cntxtToggle", "Context", FALSE))),
-    fluidRow(column(10, textInput("inText", label = NULL, value = "", width="100%")),
+    fluidRow(column(10, textInput("inText", label = NULL, value = "type what you", width="100%")),
              column( 2, actionButton("clrButton", label = "Clear", class = "btn btn-danger"))),
     fluidRow(id="predRow"),
     fluidRow(hr(id="sep")),
@@ -87,10 +89,9 @@ server <- function(input, output, session) {
         wordle@p                 <- 0:nglen
         wordle@Dim[2]            <- as.integer(nglen)
         wordle@Dimnames$features <- ngpred$ahead
-        wordle@x                 <- round(ngpred$psm*200,0)
+        wordle@x                 <- round(ngpred$psm*200,0)  # check other scales
         textplot_wordcloud(wordle, random_order = FALSE, color = "steelBlue4",
                            rotation = 0.25, min_size = 1, max_size     = 5)
-        
     }
     
     # probabilty chart ########################################################
@@ -109,16 +110,16 @@ server <- function(input, output, session) {
                           tiC4=NULL,teC4=NULL,taC4=NULL) {
         output$titleC1 <- renderText({tiC1})
         output$textoC1 <- renderText({teC1})
-        output$tableC1 <- renderTable({taC1})
+        output$tableC1 <- renderTable({taC1},striped = TRUE, digits = 4)
         output$titleC2 <- renderText({tiC2})
         output$textoC2 <- renderText({teC2})
-        output$tableC2 <- renderTable({taC2})
+        output$tableC2 <- renderTable({taC2},striped = TRUE, digits = 4)
         output$titleC3 <- renderText({tiC3})
         output$textoC3 <- renderText({teC3})
-        output$tableC3 <- renderTable({taC3})
+        output$tableC3 <- renderTable({taC3},striped = TRUE, digits = 4)
         output$titleC4 <- renderText({tiC4})
         output$textoC4 <- renderText({teC4})
-        output$tableC4 <- renderTable({taC4})
+        output$tableC4 <- renderTable({taC4},striped = TRUE, digits = 4)
     }
 
     innerTC <- function(t,w) paste0("Terms ",t,"<br>Weight ",round(100*w,2),"%")
@@ -178,14 +179,15 @@ server <- function(input, output, session) {
                 if (input$chartMode == "W") wordleChart()
                 else                        probableChart()
             })
-            if (ngmode==1) innerData(tiC1 = "Context Guess", taC1 = ngpred)
-            if (ngmode==2) innerData(tiC1 = "Best Guess", taC1 = ngpred)
-            if (ngmode==0) innerData(tiC1="N1",teC1=innerTC(ld1,lw1),taC1=ng1,
-                                     tiC2="N2",teC2=innerTC(ld2,lw2),taC2=ng2,
-                                     tiC3="N3",teC3=innerTC(ld3,lw3),taC3=ng3,
-                                     tiC4="N4",teC4=innerTC(ld4,lw4),taC4=ng4)
+            if (ngmode==1) innerData(tiC1 = "Context Guess", taC1 = ngpred[1:min(ld1,predsetshow),])
+            if (ngmode==2) innerData(tiC1 = "Best Guess", taC1 = ngpred[1:min(ld1,predsetshow),])
+            if (ngmode==0) innerData(tiC1="N1",teC1=innerTC(ld1,lw1),taC1=ng1[1:min(ld1,predsetshow),],
+                                     tiC2="N2",teC2=innerTC(ld2,lw2),taC2=ng2[1:min(ld2,predsetshow),],
+                                     tiC3="N3",teC3=innerTC(ld3,lw3),taC3=ng3[1:min(ld3,predsetshow),],
+                                     tiC4="N4",teC4=innerTC(ld4,lw4),taC4=ng4[1:min(ld4,predsetshow),])
         } else
             innerData()
+        runjs(HTML("document.getElementById('inText').focus()")) # return focus to inText
     })
 
 

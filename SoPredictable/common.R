@@ -89,7 +89,8 @@ addPredButtons <- function(prediction, part = FALSE) {
     for(i in length(prediction):1)
         insertUI("#predButtons", where="afterBegin",
                  actionButton(paste0("BTN",i),
-                              prediction[i], class=btnclass))
+                              prediction[i], class="btn btn-success"))
+    if (part) insertUI("#predButtons", where = "beforeEnd", img(src="replace.png"))
 }
 
 

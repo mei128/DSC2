@@ -1,20 +1,19 @@
 <h3>Help</h3>
-<p>This Shiny App is a simple type-ahead predictor. Just type in the input field and it will suggest a probable next word. Click on one of the suggested terms and it will be added to your input. If the suggestion is made in the middle of a word (indicated by a different button color) your word will be completed. You can click on the input again to continue typing or edit your input in any way you want.</p>
+<p>This Shiny App is a simple type-ahead predictor. Just type in the input field and it will suggest a probable next word. Click on one of the suggested terms and it will be added to your input. An orange arrow in the prediction line indicates that the prediction will complete or replace the word you are typing, otherwise the prediction will be appended. You can continue typing or edit your input in any way you want.</p>
 <p>Click on the Clear button to reset your input.</p>
 <p>The number of suggested terms is capped to the 8 most probable terms of the predicted set.</p>
 
 <h4>Word Charts</h4>
-<p>The <b>Word Charts</b> tab will display a word cloud or a probability table of all terms in the predcition set (probability is normalized for the set), not just the suggested buttons. You can toggle between chart formats. The charts are a good indicator the relative porbability of the terms suggested.</p>
+<p>The <b>Word Charts</b> tab will display a word cloud with most relevant terms or a probability table of terms in the predcition set (probability is normalized for the trimmed set), not just the suggested buttons. You can toggle between chart formats. The charts are a good indicator the relative porbability of the terms suggested.</p>
 <h4>Inner Data</h4>
-<p>The <b>Inner Data</b> tab will show for each of the levels of the algorithm the number of n-gram matches, a summary of weights, and total weight of each level. When there is no match it will indicate that the algorithm is guessing based on context terms or, when nothing typed can be put in context in the corpus, it is providing a best guess based on word frequency.</p>
+<p>The <b>Inner Data</b> tab will show the number of n-gram matches, the weight of each level, and the 8 top terms for each level of the algorithm. The <b>psm</b> value shown next to each term indicates how much that particular instance contributes to the total prediction. When there is no match it will indicate that the algorithm is guessing based on context terms or, when nothing typed can be put in context in the corpus, it is providing a best guess based on word frequency.</p>
 <h4>Context Boost</h4>
-<p>When the <b>context</b> toggle is selected, the prediction set is altered based on the context provided by the entire input stream and not  just the last three tokens. For example "government proposed to increase..." will look at the last three tokens to suggest a next term, but with the context toggle the entire input is considered, yielding a different prediction. For the effect to be apreciated use terms with heavy significance (government, congress, ...) in long input streams to provide enough context.</p>
+<p>When the <b>context</b> toggle is selected, the prediction set is altered based on the context provided by the entire input stream and not  just the last three tokens. For example "government proposed to increase..." will look at the last three tokens to suggest a next term, but with the context toggle the entire input is considered, "government" is included, and it yields a different prediction. For the effect to be apreciated use terms with heavy significance (government, congress, ...) in long input streams to provide enough context.</p>
 <h4>Caveat Emptor</h4>
 <ul>
     <li>Prediction will only act on the right-end, not where you type.</li>
     <li>There is no control over typing beyond the visible end of the input field.</li>
     <li>Depending on your connection, you can easily outrun the predictor. Slow down if it feels sluggish</li>
-    <li>Remember to set focus on the input field if you want to type again after clicking on a prediction: this is smart, but not so smart.</li>
 </ul>
 <h4>To learn more</h4>
 <p>Please visit <a href="http://www.google.com">SoPredictable, a simple type-ahead prediction tool</a> to learn more about the algorithm used to build this app.</p>
