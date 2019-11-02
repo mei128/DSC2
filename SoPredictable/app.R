@@ -179,8 +179,8 @@ server <- function(input, output, session) {
                 if (input$chartMode == "W") wordleChart()
                 else                        probableChart()
             })
-            if (ngmode==1) innerData(tiC1 = "Context Guess", taC1 = ngpred[1:min(ld1,predsetshow),])
-            if (ngmode==2) innerData(tiC1 = "Best Guess", taC1 = ngpred[1:min(ld1,predsetshow),])
+            if (ngmode==1) innerData(tiC1 = "Context Guess", taC1 = ngpred[1:min(nglen,predsetshow),])
+            if (ngmode==2) innerData(tiC1 = "Best Guess", taC1 = ngpred[1:min(nglen,predsetshow),])
             if (ngmode==0) innerData(tiC1="N1",teC1=innerTC(ld1,lw1),taC1=ng1[1:min(ld1,predsetshow),],
                                      tiC2="N2",teC2=innerTC(ld2,lw2),taC2=ng2[1:min(ld2,predsetshow),],
                                      tiC3="N3",teC3=innerTC(ld3,lw3),taC3=ng3[1:min(ld3,predsetshow),],
