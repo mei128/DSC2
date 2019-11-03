@@ -1,0 +1,64 @@
+<style> .reveal { font-size: 24px }</style>
+So Predictable
+========================================================
+author: Manuel Esteban-Infantes
+date: November 1, 2019
+transition: linear
+autosize: true
+
+So Predictable is a simple type-ahead predictor that suggests the next word to type, or how to complete the word being typed. It shows part of its internals in the form frequency charts or the predictions done for each step of the algorithm.
+<center>![](capture.png)
+
+Instructions
+========================================================
+So Predictable is a Shiny app [hosted in shinyapps.io](https://mei128.shinyapps.io/SoPredictable/).
+  
+Just type in the input field and it will suggest a probable next word to type, or how to complete the word being typed. Click on one of the suggested terms and it will be added to your input or, if there's an orange arrow in the prediction line, the prediction will complete or replace the word you are typing. You can continue typing or edit your input in any way you want.
+  
+### Context Boost
+
+When the **context** toggle is selected, the prediction set is altered based on the context provided by the entire input stream and not just the last three tokens. For example, when you type "government proposed to increase..." the app will look at the last three tokens to suggest a next term, but with the context toggle the entire input is considered, "government" is included, and it yields a different prediction. For the effect to be apreciated use terms with heavy significance (government, congress, ...) in long input streams to provide enough context.
+
+### Tabs
+
+The lower part of the screen includes three tabs. The first two ilustrate internals of the app, displaying a frequency chart of the terms predicted, and the prediction at each level of the algorithm and the weight it contributes to the final prediction. The last tab includes a complete instruction set.
+
+
+The Algorithm
+========================================================
+
+- The algorithm uses n-grams to predict the $n_{th}$ term from $(n-1)$ tokens by its frequency, combining predictions from up to 4 levels with a weight factor depending on the discriminating value of each level.
+<center>Prediction Set = $L_{1}N_{1}+L_{2}N_{2}+L_{3}N_3+L_{4}N_{4}$
+ 
+- $N_{n}$ are the probabilities of single tokens, 2-grams, 3-grams, and 4-grams.  
+- $L_{n}$ are weighting factors for each level.  
+- Level 1 only applies when the last input token is not complete, and we are predicting by frequency of partial matches how to complete the last word.
+- Predictions are capped at 40 elements and their probabilities normalized at each level.
+
+
+Building the Model
+========================================================
+1. corpus is read, split in sentences, and tokenized, with numbers and symbols removed
+2. set is trimmed leaving only the 2000 most frequent tokens (over 77% of corpus covered), profanity is removed (profanity_banned list from *lexicon* package)
+3. corpus is split in 50 subsamples of 20,000 sentences each (over 15% of the corpus covered )
+3. n-grams are built for up to 4 levels for each subsample, all tables are combined
+3. probability is smoothed for n-grams is smoothed using Good-Turing revised counts for n-grams occurring 5 or less times over the total n-gram count
+4. co-occurrence matrix is built with the entire set, counting how many times each token appears with another token in the same sentence
+  
+The app loads the $N_{n}$ probabilities as a look-up table indexed by the $(n-1)$ tokens of the n-grams.
+
+Context
+========================================================
+We have added a co-occurrence matrix to the model:
+
+- to alter the probabilities of a prediction set, depending on the co-occurence of the predicted terms with the entire input stream, no just the last three tokens
+- to predict a term even when the last typed token does not appear in our corpus, by guessing the terms that most frequently appeared with the rest of the input stream.
+  
+<div style="font-size: 30px">Weights</div>
+  
+Predictions from each level are weigthed by a factor proportional to the discriminating value of the tokens matched to each level
+<center>
+$L_{n}$ = Total n-grams in level (n) / n-grams matched in level (n)
+</center>
+- The weight assigned to a certain level is higher when the number of n-grams macthed is lower.
+- The search is interrupted for a level and higher levels when there is no match.
